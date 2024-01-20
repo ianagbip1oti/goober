@@ -2,6 +2,8 @@ use std::marker::PhantomData;
 
 use goober_core::{activation::Activation, FeedForwardNetwork, Matrix, OutputLayer, Vector};
 
+use crate::boxed_and_zeroed;
+
 /// Fully-Connected layer.
 /// - `T` is the activation function used.
 /// - `M` is the size of the input vector.
@@ -53,6 +55,26 @@ impl<T: Activation, const M: usize, const N: usize> DenseConnected<T, M, N> {
             bias: Vector::from_fn(b),
             phantom: PhantomData,
         }
+    }
+
+    pub fn boxed_and_zeroed() -> Box<Self> {
+        boxed_and_zeroed()
+    }
+
+    pub fn boxed_from_fn<W: FnMut(usize, usize) -> f32, B: FnMut(usize) -> f32>(
+        mut w: W,
+        mut b: B,
+    ) -> Box<Self> {
+        let mut layer = Self::boxed_and_zeroed();
+
+        for i in 0..N {
+            for j in 0..M {
+                layer.weights[i][j] = w(i, j);
+            }
+            layer.bias[i] = b(i);
+        }
+
+        layer
     }
 
     pub fn transpose_mul(&self, out: Vector<N>) -> Vector<M> {

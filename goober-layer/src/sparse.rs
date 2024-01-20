@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use goober_core::{
     activation::Activation, FeedForwardNetwork, Matrix, OutputLayer, SparseVector, Vector,
 };
+use crate::boxed_and_zeroed;
 
 /// Fully-Connected layer with sparse input.
 /// - `T` is the activation function used.
@@ -52,6 +53,29 @@ impl<T: Activation, const M: usize, const N: usize> SparseConnected<T, M, N> {
             bias: Vector::from_fn(b),
             phantom: PhantomData,
         }
+    }
+
+    pub fn boxed_and_zeroed() -> Box<Self> {
+        boxed_and_zeroed()
+    }
+
+    pub fn boxed_from_fn<W: FnMut(usize, usize) -> f32, B: FnMut(usize) -> f32>(
+        mut w: W,
+        mut b: B,
+    ) -> Box<Self> {
+        let mut layer = Self::boxed_and_zeroed();
+
+        for i in 0..M {
+            for j in 0..N {
+                layer.weights[i][j] = w(i, j);
+            }
+        }
+
+        for i in 0..N {
+            layer.bias[i] = b(i);
+        }
+
+        layer
     }
 }
 
